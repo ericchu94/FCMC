@@ -20,7 +20,6 @@ stdin.addListener('data', function (data) {
       socket.emit('start');
       break;
     case 'f':
-      room.board[splitted[1]].flipped = true;
       socket.emit('flip', splitted[1]);
       break;
     case 'n':
@@ -81,6 +80,10 @@ socket.on('unready', function (id) {
   }
   outputShit();
 });
+socket.on('flip', function (position) {
+  room.board[position].flipped = true;
+  outputShit();
+});
 socket.on('card mismatch', function (data) {
   ++room.turn;
 
@@ -91,7 +94,7 @@ socket.on('card mismatch', function (data) {
   outputShit();
 });
 socket.on('card match', function (data) {
-  player.score += 5;
+  room.players[room.turn].score += 5;
   ++room.matchCount;
 
   for (var i = 0; i < data.positions.length; ++i) {
