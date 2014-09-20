@@ -162,22 +162,22 @@ io.on('connection', function (socket) {
 
     var card = room.board[position];
     // BROKEN
-    // io.emit('flip', {
-    //   position: position,
-    //   text: card.text,
-    // });
+    io.emit('flip', {
+       position: position,
+       text: card.text,
+    });
 
     // WORKING
-    combineObjects(card, {'position': position});
-    // if (card.flipped) {
-    //   return;
-    // }
+    //combineObjects(card, {'position': position});
+    if (card.flipped) {
+      return;
+    }
 
     card.flipped = true;
-    // io.emit('flip', {
-    //   position: position,
-    //   back: card.back
-    // });
+    io.emit('flip', {
+      position: position,
+      back: card.back
+    });
 
     io.emit('flip', card);
     var wCard = room.board[room.workingCard];
