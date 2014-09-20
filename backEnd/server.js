@@ -145,6 +145,11 @@ io.on('connection', function (socket) {
   });
   socket.on('flip', function (position) {
     position = parseInt(position);
+    function combineObjects(obj1, obj2) {
+      for (var prop in obj2) { 
+        obj1[prop] = obj2[prop];
+      }
+    }
     if (position < 0 || position >= room.boardSize) {
       return;
     }
@@ -154,16 +159,25 @@ io.on('connection', function (socket) {
     }
 
     var card = room.board[position];
+    // BROKEN
+    // io.emit('flip', {
+    //   position: position,
+    //   text: card.text,
+    // });
 
-    if (card.flipped) {
-      return;
-    }
+    // WORKING
+    combineObjects(card, {'position': position});
+    // if (card.flipped) {
+    //   return;
+    // }
 
     card.flipped = true;
-    io.emit('flip', {
-      position: position,
-      text: card.text,
-    });
+    // io.emit('flip', {
+    //   position: position,
+    //   back: card.back
+    // });
+
+  io.emit('flip', card);
 
     var wCard = room.board[room.workingCard];
 

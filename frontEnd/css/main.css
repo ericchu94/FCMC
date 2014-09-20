@@ -6,7 +6,6 @@
 
 .flip {
 	-webkit-perspective: 800;
-	width: 200px;
 	height: 100px;
 	position: relative;
 	margin: 50px auto;
@@ -17,10 +16,11 @@
 }
 
 .flip .card {
-	width: 100%;
 	height: 100%;
+	margin: 5px;
+	text-transform: uppercase;
 	-webkit-transform-style: preserve-3d;
-	-webkit-transition: 0.5s;
+	-webkit-transition: 1s;
 }
 
 .flip .card .face {
@@ -40,6 +40,7 @@
 	background: black;
 	color: white;
 	cursor: pointer;
+	border: 1px solid white;
 }
 
 .flip .card .back {
