@@ -80,13 +80,14 @@ function extractBoard() {
       id: card.card_id,
       removed: false,
     };
+    room.board.push(front);
     var back = {
       text: card.back,
       flipped: false,
       id: card.card_id,
       removed: false,
     };
-    room.board.push(card);
+    room.board.push(back);
   }
 
   shuffle(room.board);
