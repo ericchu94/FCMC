@@ -92,14 +92,6 @@ function extractBoard() {
   shuffle(room.board);
 }
 
-function nextPlayer(){
-	++room.turn;
-	while(room.players[room.turn % room.players.length].ready == false)
-	{
-		++room.turn;
-	}
-}
-
 console.log('Server started');
 io.on('connection', function (socket) {
   // new connection
@@ -151,12 +143,9 @@ io.on('connection', function (socket) {
     room.gameOn = true;
     io.emit('start');
   });
-
-
-
-
   socket.on('flip', function (position) {
     position = parseInt(position);
+    console.log('Flipping: ' + position);
     function combineObjects(obj1, obj2) {
       for (var prop in obj2) { 
         obj1[prop] = obj2[prop];
@@ -166,9 +155,9 @@ io.on('connection', function (socket) {
       return;
     }
 
-    if (room.players[room.turn % room.players.length] != player) {
-      return;
-    }
+    // if (room.players[room.turn % room.players.length] != player) {
+    //   return;
+    // }
 
     var card = room.board[position];
     // BROKEN
@@ -189,8 +178,7 @@ io.on('connection', function (socket) {
     //   back: card.back
     // });
 
-  io.emit('flip', card);
-
+    io.emit('flip', card);
     var wCard = room.board[room.workingCard];
 
     if (room.workingCard) {
@@ -220,8 +208,7 @@ io.on('connection', function (socket) {
         wCard.flipped = false;
         card.flipped = false;
 
-        nextPlayer();
-
+        ++room.turn;
 
         io.emit('card mismatch', {
           positions: [ position, room.workingCard ],
@@ -279,11 +266,4 @@ io.on('connection', function (socket) {
     player.ready = false;
     io.emit('unready', player.id);
   });
-
-  socket.on("disconnect", function(){
-  	player.ready = false;
-  	console.log('Player disconnect');
-  });
-
-
 });
