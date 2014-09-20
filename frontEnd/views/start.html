@@ -1,0 +1,15 @@
+<div class="row users">
+	<h1>{{gameinfo.players.length}} players in this game</h1><span class="minimize" ng-click="minimize = !minimize" title="Minimize Window">_</span>
+	<div ng-repeat="player in gameinfo.players" class="user" ng-show="!minimize">Player</div>
+</div>
+
+<div ng-show="gameended">
+	<a href="/start">Play again</a>
+</div>
+<div class="row flip">
+	<div class="col-md-3 card" ng-repeat="card in gameinfo.board" ng-class="{'flipped': card.flipped}">
+		<div ng-click="card.flipped = !card.flipped; revealCard($index)" class="face front" ng-show="!card.removed">Card front</div>
+		<div ng-click="card.flipped = !card.flipped; revealCard($index)" class="face back" ng-show="!card.removed">{{card.text}}</div>
+		<div class="face back fadeout" ng-show="card.removed">{{card.text}}</div>
+	</div>
+</div>
