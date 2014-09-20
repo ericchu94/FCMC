@@ -92,6 +92,14 @@ function extractBoard() {
   shuffle(room.board);
 }
 
+function nextPlayer(){
+	++room.turn;
+	while(room.players[room.turn % room.players.length].ready == false)
+	{
+		++room.turn;
+	}
+}
+
 console.log('Server started');
 io.on('connection', function (socket) {
   // new connection
@@ -143,6 +151,10 @@ io.on('connection', function (socket) {
     room.gameOn = true;
     io.emit('start');
   });
+
+
+
+
   socket.on('flip', function (position) {
     position = parseInt(position);
     function combineObjects(obj1, obj2) {
@@ -208,7 +220,8 @@ io.on('connection', function (socket) {
         wCard.flipped = false;
         card.flipped = false;
 
-        ++room.turn;
+        nextPlayer();
+
 
         io.emit('card mismatch', {
           positions: [ position, room.workingCard ],
@@ -266,4 +279,11 @@ io.on('connection', function (socket) {
     player.ready = false;
     io.emit('unready', player.id);
   });
+
+  socket.on("disconnect", function(){
+  	player.ready = false;
+  	console.log('Player disconnect');
+  });
+
+
 });
