@@ -57,6 +57,7 @@ function initializeRoom() {
     boardSize: 24,
     turn: 0, // represents which index of player is to perform the next action
     workingCard: null, // represents the position of card that is flipped
+    matchCount: 0,
   };
 
   setupCards();
@@ -113,7 +114,6 @@ io.on('connection', function (socket) {
     boardSize: room.boardSize,
     turn: 0,
     board: [],
-    matchCount: 0,
   };
   for (var i = 0; i < room.board.length; ++i) {
     var card = room.board[i];
