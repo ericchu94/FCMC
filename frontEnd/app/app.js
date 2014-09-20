@@ -6,16 +6,16 @@ app.config( function myAppConfig ($routeProvider, $locationProvider) {
   $locationProvider.html5Mode(true);
 
   $routeProvider.when('/', {
-    templateUrl: 'views/partials/home.html',
+    templateUrl: 'views/home.html',
     controller: 'HomeCtrl'
   }).when('start', {
-    templateUrl: 'views/partials/start.html',
-    controller: 'HomeCtrl'
-  }).otherwise( 'home' );
-})
+    templateUrl: 'views/start.html',
+    controller: 'GameCtrl'
+  }).otherwise( '/' );
+});
 
 app.run( function run () {
-})
+});
 
 app.controller( 'AppCtrl', function AppCtrl ( $scope, $location, socket ) {
   $scope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams){
@@ -23,6 +23,4 @@ app.controller( 'AppCtrl', function AppCtrl ( $scope, $location, socket ) {
       $scope.pageTitle = toState.data.pageTitle + ' | FCMC' ;
     }
   });
-})
-
-;
+});
