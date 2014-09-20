@@ -71,7 +71,7 @@ function setupCards() {
 }
 
 function extractBoard() {
-  var cards = room.cards.splice(room.cards.length, room.boardSize / 2);
+  var cards = room.cards.splice(room.cards.length - room.boardSize / 2);
   for (var i = 0; i < cards.length; ++i) {
     var card = cards[i];
     var front = {
