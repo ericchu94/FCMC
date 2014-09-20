@@ -80,13 +80,13 @@ function extractBoard() {
       id: card.card_id,
       removed: false,
     };
-    room.board.push(front);
     var back = {
       text: card.back,
       flipped: false,
       id: card.card_id,
       removed: false,
     };
+    room.board.push(front);
     room.board.push(back);
   }
 
@@ -120,7 +120,7 @@ io.on('connection', function (socket) {
 
     state.board.push({
       flipped: card.flipped,
-      text: card.flipped ? card.text : '',
+      text: card.text,
       removed: card.removed,
     });
   }
@@ -147,42 +147,28 @@ io.on('connection', function (socket) {
   socket.on('flip', function (position) {
     position = parseInt(position);
     console.log('Flipping: ' + position);
-    function combineObjects(obj1, obj2) {
-      for (var prop in obj2) { 
-        obj1[prop] = obj2[prop];
-      }
-    }
+
     if (position < 0 || position >= room.boardSize) {
       return;
     }
 
-    // if (room.players[room.turn % room.players.length] != player) {
-    //   return;
-    // }
+    console.log(room.turn, room.players.length, room.players[room.turn % room.players.length].id, player.id);
+    if (room.players[room.turn % room.players.length] != player) {
+      return;
+    }
 
     var card = room.board[position];
-    // BROKEN
-    io.emit('flip', {
-       position: position,
-       text: card.text,
-    });
 
-    // WORKING
-    //combineObjects(card, {'position': position});
     if (card.flipped) {
       return;
     }
 
+    io.emit('flip', position);
+
     card.flipped = true;
-    io.emit('flip', {
-      position: position,
-      back: card.back
-    });
 
-    io.emit('flip', card);
-    var wCard = room.board[room.workingCard];
-
-    if (room.workingCard) {
+    if (room.workingCard != null) {
+      var wCard = room.board[room.workingCard];
       // second flip
       if (wCard.id == card.id) {
         // matched flip
