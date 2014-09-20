@@ -3,7 +3,6 @@ var app = angular.module( 'hackthenorth', [
 ]);
 
 app.config( function myAppConfig ($routeProvider, $locationProvider) {
-<<<<<<< HEAD
   $routeProvider
   .when('/', {
     templateUrl: 'views/home.html',
