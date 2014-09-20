@@ -1,0 +1,9 @@
+{
+  "name": "Hack-The-North",
+  "version": "0.0.0",
+  "license": "MIT",
+  "dependencies": {
+    "angular": "~1.2.25",
+    "angular-route": "~1.2.25"
+  }
+}
