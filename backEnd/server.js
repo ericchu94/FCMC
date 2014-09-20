@@ -72,6 +72,7 @@ function setupCards() {
 }
 
 function extractBoard() {
+  room.board = [];
   var cards = room.cards.splice(room.cards.length - room.boardSize / 2);
   for (var i = 0; i < cards.length; ++i) {
     var card = cards[i];
@@ -94,6 +95,22 @@ function extractBoard() {
   shuffle(room.board);
 }
 
+function getBoardState() {
+  var board = [];
+
+  for (var i = 0; i < room.board.length; ++i) {
+    var card = room.board[i];
+
+    board.push({
+      flipped: card.flipped,
+      text: card.text,
+      removed: card.removed,
+    });
+  }
+
+  return board;
+}
+
 console.log('Server started');
 io.on('connection', function (socket) {
   // new connection
@@ -110,19 +127,11 @@ io.on('connection', function (socket) {
   var state = {
     gameOn: room.gameOn,
     players: room.players,
-    boardSize: room.boardSize,
     turn: 0,
-    board: [],
+    board: getBoardState(),
+    matchCount: room.matchCount,
   };
-  for (var i = 0; i < room.board.length; ++i) {
-    var card = room.board[i];
 
-    state.board.push({
-      flipped: card.flipped,
-      text: card.text,
-      removed: card.removed,
-    });
-  }
   socket.emit('room', state);
   console.log('Emit: room');
 
@@ -190,14 +199,6 @@ io.on('connection', function (socket) {
           positions: [ position, room.workingCard ],
         });
         console.log('Emit: card match');
-
-        if (room.matchCount == room.boardSize / 2) {
-          // end game
-          io.emit('end');
-          console.log('Emit: end');
-        }
-
-        // end game
       } else {
         // unmatched flip
         // flip back, next turn
@@ -229,6 +230,10 @@ io.on('connection', function (socket) {
     // reset turn
     // gameoff
 
+    if (room.matchCount != room.boardSize / 2) {
+      return;
+    }
+
     room.gameOn = false;
     room.turn = 0;
 
@@ -244,6 +249,8 @@ io.on('connection', function (socket) {
       player.ready = true;// TODO change to false
     }
 
+    io.emit('next', getBoardState());
+    console.log('Emit: next');
   });
 
   socket.on('ready', function () {

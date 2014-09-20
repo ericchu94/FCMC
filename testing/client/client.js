@@ -92,10 +92,23 @@ socket.on('card mismatch', function (data) {
 });
 socket.on('card match', function (data) {
   player.score += 5;
+  ++room.matchCount;
 
   for (var i = 0; i < data.positions.length; ++i) {
     var position = data.positions[i];
     room.board[position].removed = true;
+  }
+  outputShit();
+});
+socket.on('next', function (board) {
+  room.gameOn = false;
+  room.turn = 0;
+  room.board = board;
+
+  for (var i = 0; i < room.players.length; ++i) {
+    var player = room.players[i];
+    player.score = 0;
+    player.ready = true; // TODO change to false
   }
   outputShit();
 });
