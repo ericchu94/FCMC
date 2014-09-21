@@ -5,7 +5,7 @@ app.controller('GameCtrl', function($scope, socket, $timeout, $location, $modal,
 
 	$scope.ok = function() {
 		$location.path('/start');
-		$route.reload();
+		// $route.reload();
 	}
 
 	socket.emit('room');
@@ -47,7 +47,7 @@ app.controller('GameCtrl', function($scope, socket, $timeout, $location, $modal,
 		if($scope.gameinfo.board.length/2 == $scope.gameinfo.matchCount) {
 			$scope.gameended = true;
 			console.log('game over');
-			$modal.open({
+			var modalInstance = $modal.open({
 			  templateUrl: 'views/partials/playagain.html',
 			  scope: $scope
 			});

@@ -19,7 +19,7 @@
 	</div>
 </div>
 <div class="grid-container">
-	<div class="row flip" ng-show="!gameended">
+	<div class="row flip">
 		<div class="col-md-3 card" ng-repeat="card in gameinfo.board" ng-class="{'flipped': card.flipped}">
 			<div ng-click="card.flipped = !card.flipped; revealCard($index)" class="face front" ng-show="!card.removed"></div>
 			<div ng-click="card.flipped = !card.flipped; revealCard($index)" class="face back" ng-show="!card.removed">{{card.text}}</div>
