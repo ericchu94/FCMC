@@ -113,6 +113,7 @@ function getBoardState() {
 
 function nextPlayer() {
   while (!room.players[++room.turn % room.players.length].ready);
+  room.turn = room.turn % room.players.length;
 }
 
 console.log('Server started');
@@ -123,16 +124,10 @@ io.on('connection', function (socket) {
   // Add player
   var player = {
     score: 0,
-    ready: true,
+    ready: false,
     disconnected: false,
     id: playerIdCounter++,
   };
-
-  // TODO remove
-  if (room.gameOn) {
-    player.ready = false;
-  }
-
 
   // send initial state
   var state = {
@@ -279,7 +274,7 @@ io.on('connection', function (socket) {
           --i; // decrese, for increases, same index for next run
       }
       player.score = 0;
-      player.ready = true;// TODO change to false
+      player.ready = false;
     }
 
     io.emit('next', getBoardState());
