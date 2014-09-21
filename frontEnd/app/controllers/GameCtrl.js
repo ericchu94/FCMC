@@ -1,11 +1,12 @@
-app.controller('GameCtrl', function($scope, socket, $timeout) {
+app.controller('GameCtrl', function($scope, socket, $timeout, $location, $modal, $route) {
 	$scope.gameended = false;
-	// window.b = $scope.flipped = [];
 	socket.emit('start');
-	// socket.on('start', function (data) {
-	//   console.log(data);
-	//   $scope.gameinfo = data;
-	// });
+
+	$scope.ok = function() {
+		console.log('k');
+		$location.path('/start');
+		$route.reload();
+	}
 
 	socket.emit('room');
 	socket.on('room', function (data) {
@@ -21,12 +22,11 @@ app.controller('GameCtrl', function($scope, socket, $timeout) {
 
 	socket.on('card match', function(data) {
 		console.log('matched');
+		console.log(data.positions);
 		if(data.positions instanceof Array) {
 			data.positions.forEach(function(index) {
-				console.log('Modifying ' + index);
-				console.log($scope.gameinfo.board[index]);
 				$scope.gameinfo.board[index].removed = true;
-			});	
+			});
 		}
 	});
 
@@ -47,18 +47,17 @@ app.controller('GameCtrl', function($scope, socket, $timeout) {
 		$scope.gameended = true;
 	});
 
+	socket.on('next', function() {
+		console.log('Moving on to next game');
+		$location.path('/start');
+	});
+
 	$scope.revealCard = function(index) {
 		socket.emit('flip', index);
-		// $scope.gameinfo.board[index].flipped = false;
-		// if($scope.flipped.length < 2) {
-		// 	$scope.flipped.push(index);
-		// } else {
-		// 	// Reset flipped cards back to unflipped
-		// 	$scope.flipped.forEach(function(index) {
-		// 		socket.emit('flip', index);
-		// 	});
-		// 	clearArray($scope.flipped);
-		// }
+	}
+
+	$scope.nextGame = function() {
+		socket.emit('next');
 	}
 
 	function combineObjects(obj1, obj2) {

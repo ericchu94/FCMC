@@ -1,5 +1,6 @@
 var app = angular.module( 'hackthenorth', [
-  'ngRoute'
+  'ngRoute',
+  'ui.bootstrap'
 ]);
 
 app.config( function myAppConfig ($routeProvider, $locationProvider) {
