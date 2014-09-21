@@ -307,24 +307,33 @@ io.on('connection', function (socket) {
   });
 
   socket.on('disconnect', function () {
-    player.disconnected = true;
-    player.ready = false;
-    console.log('A player has disconnected');
-    io.emit('discon', player.id);
-    console.log('Emit: discon');
-
+    var index;
     // check abandoned status
     var abandoned = true;
     for (var i = 0; i < room.players.length; ++i) {
       var p = room.players[i];
       if (!p.disconnected) {
         abandoned = false;
-        break;
+      }
+      if (p == player) {
+        index = i;
       }
     }
     if (abandoned) {
       // TODO delete room
       initializeRoom();
+      return;
     }
+
+    if (!room.gameOn) {
+      // remove player from array
+      room.players.splice(index, 1);
+    } else {
+      player.disconnected = true;
+      player.ready = false;
+    }
+
+    io.emit('discon', player.id);
+    console.log('Emit: discon');
   });
 });

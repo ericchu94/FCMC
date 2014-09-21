@@ -138,9 +138,14 @@ socket.on('discon', function (id) {
     var player = room.players[i];
 
     if (player.id == id) {
-      player.disconnected = true;
-      player.ready = false;
+      if (!room.gameOn) {
+        room.players.splice(i, 1);
+      } else {
+        player.disconnected = true;
+        player.ready = false;
+      }
       break;
     }
   }
+  outputShit();
 });
