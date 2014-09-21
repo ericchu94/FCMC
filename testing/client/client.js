@@ -54,8 +54,20 @@ socket.on('new player', function (p) {
   outputShit();
 
 });
-socket.on('start', function () {
+socket.on('start', function (data) {
+  room.players = data.players;
+  room.turn = data.turn;
   room.gameOn = true;
+
+  for (var i = 0; i < room.players; ++i) {
+    var p = room.players[i];
+
+    if(p.id == player.id) {
+      player = p;
+      break;
+    }
+  }
+
   outputShit();
 });
 socket.on('ready', function (id) {
@@ -85,7 +97,7 @@ socket.on('flip', function (position) {
   outputShit();
 });
 socket.on('card mismatch', function (data) {
-  ++room.turn;
+  while (!room.players[++room.turn % room.players.length].ready);
 
   for (var i = 0; i < data.positions.length; ++i) {
     var position = data.positions[i];
@@ -94,7 +106,7 @@ socket.on('card mismatch', function (data) {
   outputShit();
 });
 socket.on('card match', function (data) {
-  room.players[room.turn].score += 5;
+  room.players[room.turn % room.players.length].score += 5;
   ++room.matchCount;
 
   for (var i = 0; i < data.positions.length; ++i) {

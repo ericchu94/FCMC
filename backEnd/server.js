@@ -55,7 +55,7 @@ function initializeRoom() {
     cards: null,
     setId: 1661835,
     boardSize: 24,
-    turn: 0, // represents which index of player is to perform the next action
+    turn: -1, // represents which index of player is to perform the next action
     workingCard: null, // represents the position of card that is flipped
     matchCount: 0,
   };
@@ -111,6 +111,10 @@ function getBoardState() {
   return board;
 }
 
+function nextPlayer() {
+  while (!room.players[++room.turn % room.players.length].ready);
+}
+
 console.log('Server started');
 io.on('connection', function (socket) {
   // new connection
@@ -123,11 +127,17 @@ io.on('connection', function (socket) {
     id: playerIdCounter++,
   };
 
+  // TODO remove
+  if (room.gameOn) {
+    player.ready = false;
+  }
+
+
   // send initial state
   var state = {
     gameOn: room.gameOn,
     players: room.players,
-    turn: 0,
+    turn: room.turn,
     board: getBoardState(),
     matchCount: room.matchCount,
   };
@@ -147,21 +157,39 @@ io.on('connection', function (socket) {
     if (room.gameOn) {
       return;
     }
+
+    var canStart = false;
+
     for (var i = 0; i < room.players.length; ++i) {
       var player = room.players[i];
 
-      if (!player.ready) {
-        return;
+      if (player.ready) {
+        canStart = true;
+        break;
       }
     }
 
+    if (!canStart) {
+      return;
+    }
+
+    shuffle(room.players);
+    nextPlayer();
+
     room.gameOn = true;
-    io.emit('start');
+    io.emit('start', {
+      players: room.players,
+      turn: room.turn,
+    });
     console.log('Emit: start');
   });
   socket.on('flip', function (position) {
     position = parseInt(position);
     console.log('Flipping: ' + position);
+
+    if (!room.gameOn) {
+      return;
+    }
 
     if (position < 0 || position >= room.boardSize) {
       return;
@@ -205,7 +233,7 @@ io.on('connection', function (socket) {
         wCard.flipped = false;
         card.flipped = false;
 
-        ++room.turn;
+        nextPlayer();
 
         io.emit('card mismatch', {
           positions: [ position, room.workingCard ],
@@ -235,7 +263,8 @@ io.on('connection', function (socket) {
     }
 
     room.gameOn = false;
-    room.turn = 0;
+    room.turn = -1;
+    room.matchCount = 0;
 
     if (room.cards.length >= room.boardSize / 2) {
       extractBoard();
