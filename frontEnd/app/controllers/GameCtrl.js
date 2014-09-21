@@ -3,7 +3,6 @@ app.controller('GameCtrl', function($scope, socket, $timeout, $location, $modal,
 	socket.emit('start');
 
 	$scope.ok = function() {
-		console.log('k');
 		$location.path('/start');
 		$route.reload();
 	}
