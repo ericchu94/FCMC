@@ -27,6 +27,7 @@ function updatePlayers() {
     var p = room.players[i];
     var $p = $($('#template-player').html());
     if (player && p.id == player.id) {
+      $p.addClass('player-me');
       $p.find('.player-name').text('Me');
 
       if (p.ready) {
@@ -95,10 +96,19 @@ function updateWinner() {
   }
 }
 
+function updateControls() {
+  if (room.gameOn) {
+    $('.controls').css('display', 'none');
+  } else {
+    $('.controls').css('display', '');
+  }
+}
+
 function updateState() {
   updatePlayers();
   updateBoard();
   updateWinner();
+  updateControls();
 }
 
 function outputShit() {
@@ -134,7 +144,8 @@ socket.on('start', function (data) {
 
   updatePlayers();
   updateBoard();
-  outputShit();
+
+  $('.controls').slideUp('slow');
 });
 socket.on('ready', function (id) {
   if (id == player.id) {
@@ -231,6 +242,7 @@ socket.on('next', function (board) {
     player.ready = false;
   }
   updateState();
+  $('.controls').slideDown('slow');
 });
 socket.on('discon', function (id) {
   for (var i = 0; i < room.players.length; ++i) {

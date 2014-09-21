@@ -1,27 +1,44 @@
 var io = require('socket.io')(8587);
 var https = require('https');
+var async = require('async');
 
 var sets = {};
 
 var s = '';
 
-https.get({
-  host: 'api.Cram.com',
-  path: '/v2/sets/1661835?client_id=2b8b14b461a5cbf2aa508639abe8b115',
-}, function (res) {
-  console.log('cram');
-  res.on('data', function (chunk) {
-    s += chunk.toString();
-  });
-  res.on('end', function () {
-    var data = JSON.parse(s);
-    for (var i = 0; i < data.length; ++i) {
-      var set = data[i];
-      sets[set.set_id] = set;
-    }
+var publics = [ 1661835 ];
 
-    initializeRoom();
-  });
+var gets = [];
+
+for (var i = 0; i < publics.length; ++i) {
+  var setId = publics[i];
+  gets.push(function (id) {
+    return function (callback) {
+      https.get({
+        host: 'api.Cram.com',
+        path: '/v2/sets/' + id + '?client_id=2b8b14b461a5cbf2aa508639abe8b115',
+      }, function (res) {
+        console.log('cram');
+        res.on('data', function (chunk) {
+          s += chunk.toString();
+        });
+        res.on('end', function () {
+          var data = JSON.parse(s);
+          for (var i = 0; i < data.length; ++i) {
+            var set = data[i];
+            sets[set.set_id] = set;
+          }
+
+          callback(null, set);
+        });
+      });
+    };
+  } (setId));
+}
+
+console.log(gets);
+async.parallel(gets, function () {
+  initializeRoom();
 });
 
 var playerIdCounter = 1;
@@ -145,6 +162,18 @@ io.on('connection', function (socket) {
 
   io.emit('new player', player);
   console.log('Emit: new player');
+
+  socket.on('set', function (id) {
+    if (room.gameOn) {
+      return;
+    }
+
+    if (!sets[id]) {
+      return;
+    }
+
+    room.setId = id;
+  });
 
   socket.on('start', function () {
     console.log('start');

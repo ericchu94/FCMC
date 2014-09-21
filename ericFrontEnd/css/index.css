@@ -10,26 +10,28 @@
 	right: 5px;
 	-webkit-transition: 1s;
 }
-.card-front {
-	position: absolute;
+.card-front, .card-back {
 	width: 100%;
 	height: 100%;
-	background: red;
 	-webkit-transition: 1s;
 	-webkit-backface-visibility: hidden;
 	border: 1px solid grey;
+}
+.card-front {
+	position: absolute;
+	background: url('../images/htn.png') center no-repeat #eee;
+	background-size: contain;
 }
 .flipped .card-front {
 	-webkit-transform: rotatex(-180deg);	
 }
 .card-back {
 	position: absolute;
+	-webkit-transform: rotatex(-180deg);	
+}
+.card-back table {
 	width: 100%;
 	height: 100%;
-	-webkit-transform: rotatex(-180deg);	
-	-webkit-transition: 1s;
-	-webkit-backface-visibility: hidden;
-	border: 1px solid grey;
 }
 .card-back td {
 	vertical-align: middle;
@@ -45,19 +47,23 @@
 	opacity: 0.5;
 }
 .controls {
-	padding: 5px 0;
+	padding: 15px 0;
 }
-.player-ready {
+.controls > div {
+	padding-left: 6px;
+	padding-right: 6px;
+}
+.player-ready .player-top {
 	background: #aaffaa;
 }
 .player-disconnected {
-	opacity: 0.5;
+	opacity: 0.2;
+}
+.player-disconnected .player-top {
+	background: #ddd;
 }
 .matched.card {
 	opacity: 0;
-}
-.player-active {
-	font-weight: bold;
 }
 .defeat-title, .defeat-subject {
 	display: none;
@@ -68,5 +74,23 @@
 .defeat .victory-title, .defeat .victory-subject {
 	display: none;
 }
-
-
+.players {
+	padding-top: 15px;
+	padding-left: 6px;
+	padding-right: 6px;
+	font-size: 20pt;
+	color: #999;
+}
+.player-active .glyphicon-chevron-right {
+	visibility: visible;
+}
+.player-me {
+	color: black;
+}
+.glyphicon-chevron-right {
+	visibility: hidden;
+	font-size: 12px;
+	margin-left: -16px;
+	line-height: 2.7 !important;
+	vertical-align: top;
+}
