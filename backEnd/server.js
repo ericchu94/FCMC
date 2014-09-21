@@ -124,6 +124,7 @@ io.on('connection', function (socket) {
   var player = {
     score: 0,
     ready: true,
+    disconnected: false,
     id: playerIdCounter++,
   };
 
@@ -274,6 +275,10 @@ io.on('connection', function (socket) {
 
     for (var i = 0; i < room.players.length; ++i) {
       var player = room.players[i];
+      if (player.disconnected) {
+          room.players.splice(i,1);
+          --i; // decrese, for increases, same index for next run
+      }
       player.score = 0;
       player.ready = true;// TODO change to false
     }
@@ -300,5 +305,27 @@ io.on('connection', function (socket) {
     player.ready = false;
     io.emit('unready', player.id);
     console.log('Emit: unready');
+  });
+
+  socket.on('disconnect', function () {
+    player.disconnected = true;
+    player.ready = false;
+    console.log('A player has disconnected');
+    io.emit('discon', player.id);
+    console.log('Emit: discon');
+
+    // check abandoned status
+    var abandoned = true;
+    for (var i = 0; i < room.players.length; ++i) {
+      var player = room.players[i];
+      if (!player.disconnected) {
+        abandoned = false;
+        break;
+      }
+    }
+    if (abandoned) {
+      // TODO delete room
+      initializeRoom();
+    }
   });
 });
