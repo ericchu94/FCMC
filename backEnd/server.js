@@ -55,7 +55,7 @@ function initializeRoom() {
     cards: null,
     setId: 1661835,
     boardSize: 24,
-    turn: 0, // represents which index of player is to perform the next action
+    turn: -1, // represents which index of player is to perform the next action
     workingCard: null, // represents the position of card that is flipped
     matchCount: 0,
   };
@@ -72,6 +72,7 @@ function setupCards() {
 }
 
 function extractBoard() {
+  room.board = [];
   var cards = room.cards.splice(room.cards.length - room.boardSize / 2);
   for (var i = 0; i < cards.length; ++i) {
     var card = cards[i];
@@ -94,6 +95,26 @@ function extractBoard() {
   shuffle(room.board);
 }
 
+function getBoardState() {
+  var board = [];
+
+  for (var i = 0; i < room.board.length; ++i) {
+    var card = room.board[i];
+
+    board.push({
+      flipped: card.flipped,
+      text: card.text,
+      removed: card.removed,
+    });
+  }
+
+  return board;
+}
+
+function nextPlayer() {
+  while (!room.players[++room.turn % room.players.length].ready);
+}
+
 console.log('Server started');
 io.on('connection', function (socket) {
   // new connection
@@ -103,28 +124,32 @@ io.on('connection', function (socket) {
   var player = {
     score: 0,
     ready: true,
+    disconnected: false,
     id: playerIdCounter++,
   };
-  room.players.push(player);
+
+  // TODO remove
+  if (room.gameOn) {
+    player.ready = false;
+  }
+
 
   // send initial state
   var state = {
     gameOn: room.gameOn,
     players: room.players,
-    boardSize: room.boardSize,
-    turn: 0,
-    board: [],
+    turn: room.turn,
+    board: getBoardState(),
+    matchCount: room.matchCount,
   };
-  for (var i = 0; i < room.board.length; ++i) {
-    var card = room.board[i];
 
-    state.board.push({
-      flipped: card.flipped,
-      text: card.text,
-      removed: card.removed,
-    });
-  }
   socket.emit('room', state);
+  console.log('Emit: room');
+
+  room.players.push(player);
+
+  io.emit('new player', player);
+  console.log('Emit: new player');
 
   socket.on('start', function () {
     console.log('start');
@@ -133,26 +158,44 @@ io.on('connection', function (socket) {
     if (room.gameOn) {
       return;
     }
+
+    var canStart = false;
+
     for (var i = 0; i < room.players.length; ++i) {
       var player = room.players[i];
 
-      if (!player.ready) {
-        return;
+      if (player.ready) {
+        canStart = true;
+        break;
       }
     }
 
+    if (!canStart) {
+      return;
+    }
+
+    shuffle(room.players);
+    nextPlayer();
+
     room.gameOn = true;
-    io.emit('start');
+    io.emit('start', {
+      players: room.players,
+      turn: room.turn,
+    });
+    console.log('Emit: start');
   });
   socket.on('flip', function (position) {
     position = parseInt(position);
     console.log('Flipping: ' + position);
 
+    if (!room.gameOn) {
+      return;
+    }
+
     if (position < 0 || position >= room.boardSize) {
       return;
     }
 
-    console.log(room.turn, room.players.length, room.players[room.turn % room.players.length].id, player.id);
     if (room.players[room.turn % room.players.length] != player) {
       return;
     }
@@ -164,6 +207,7 @@ io.on('connection', function (socket) {
     }
 
     io.emit('flip', position);
+    console.log('Emit: flip');
 
     card.flipped = true;
 
@@ -182,24 +226,19 @@ io.on('connection', function (socket) {
         io.emit('card match', {
           positions: [ position, room.workingCard ],
         });
-
-        if (room.matchCount == room.boardSize / 2) {
-          // end game
-          io.emit('end');
-        }
-
-        // end game
+        console.log('Emit: card match');
       } else {
         // unmatched flip
         // flip back, next turn
         wCard.flipped = false;
         card.flipped = false;
 
-        ++room.turn;
+        nextPlayer();
 
         io.emit('card mismatch', {
           positions: [ position, room.workingCard ],
         });
+        console.log('Emit: card mismatch');
       }
 
 
@@ -219,8 +258,13 @@ io.on('connection', function (socket) {
     // reset turn
     // gameoff
 
+    if (room.matchCount != room.boardSize / 2) {
+      return;
+    }
+
     room.gameOn = false;
-    room.turn = 0;
+    room.turn = -1;
+    room.matchCount = 0;
 
     if (room.cards.length >= room.boardSize / 2) {
       extractBoard();
@@ -230,10 +274,16 @@ io.on('connection', function (socket) {
 
     for (var i = 0; i < room.players.length; ++i) {
       var player = room.players[i];
+      if (player.disconnected) {
+          room.players.splice(i,1);
+          --i; // decrese, for increases, same index for next run
+      }
       player.score = 0;
       player.ready = true;// TODO change to false
     }
 
+    io.emit('next', getBoardState());
+    console.log('Emit: next');
   });
 
   socket.on('ready', function () {
@@ -243,6 +293,7 @@ io.on('connection', function (socket) {
 
     player.ready = true;
     io.emit('ready', player.id);
+    console.log('Emit: ready');
   });
 
   socket.on('unready', function () {
@@ -252,5 +303,37 @@ io.on('connection', function (socket) {
 
     player.ready = false;
     io.emit('unready', player.id);
+    console.log('Emit: unready');
+  });
+
+  socket.on('disconnect', function () {
+    var index;
+    // check abandoned status
+    var abandoned = true;
+    for (var i = 0; i < room.players.length; ++i) {
+      var p = room.players[i];
+      if (!p.disconnected) {
+        abandoned = false;
+      }
+      if (p == player) {
+        index = i;
+      }
+    }
+    if (abandoned) {
+      // TODO delete room
+      initializeRoom();
+      return;
+    }
+
+    if (!room.gameOn) {
+      // remove player from array
+      room.players.splice(index, 1);
+    } else {
+      player.disconnected = true;
+      player.ready = false;
+    }
+
+    io.emit('discon', player.id);
+    console.log('Emit: discon');
   });
 });
