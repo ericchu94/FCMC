@@ -308,6 +308,10 @@ io.on('connection', function (socket) {
 
   socket.on('disconnect', function () {
     var index;
+
+    player.disconnected = true;
+    player.ready = false;
+
     // check abandoned status
     var abandoned = true;
     for (var i = 0; i < room.players.length; ++i) {
@@ -328,9 +332,6 @@ io.on('connection', function (socket) {
     if (!room.gameOn) {
       // remove player from array
       room.players.splice(index, 1);
-    } else {
-      player.disconnected = true;
-      player.ready = false;
     }
 
     io.emit('discon', player.id);
