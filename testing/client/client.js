@@ -122,8 +122,25 @@ socket.on('next', function (board) {
 
   for (var i = 0; i < room.players.length; ++i) {
     var player = room.players[i];
+
+    if (player.disconnected) {
+      room.players.splice(i, 1);
+      --i;
+    }
+
     player.score = 0;
     player.ready = true; // TODO change to false
   }
   outputShit();
+});
+socket.on('discon', function (id) {
+  for (var i = 0; i < room.players.length; ++i) {
+    var player = room.players[i];
+
+    if (player.id == id) {
+      player.disconnected = true;
+      player.ready = false;
+      break;
+    }
+  }
 });

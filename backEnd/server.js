@@ -196,7 +196,6 @@ io.on('connection', function (socket) {
       return;
     }
 
-    console.log(room.turn, room.players.length, room.players[room.turn % room.players.length].id, player.id);
     if (room.players[room.turn % room.players.length] != player) {
       return;
     }
@@ -317,8 +316,8 @@ io.on('connection', function (socket) {
     // check abandoned status
     var abandoned = true;
     for (var i = 0; i < room.players.length; ++i) {
-      var player = room.players[i];
-      if (!player.disconnected) {
+      var p = room.players[i];
+      if (!p.disconnected) {
         abandoned = false;
         break;
       }
