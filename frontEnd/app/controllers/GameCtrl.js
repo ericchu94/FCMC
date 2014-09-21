@@ -1,4 +1,5 @@
 app.controller('GameCtrl', function($scope, socket, $timeout, $location, $modal, $route) {
+	$scope.gamestarted = false;
 	$scope.gameended = false;
 	socket.emit('start');
 
@@ -14,9 +15,20 @@ app.controller('GameCtrl', function($scope, socket, $timeout, $location, $modal,
 	  window.a = $scope.gameinfo;
 	});
 
+	socket.on('start', function(data) {
+		$scope.gamestarted = true;
+		console.log(data);
+	});
+
 	socket.on('flip', function (data){
 		combineObjects($scope.gameinfo.board[data.position], data);
 		console.log(data);
+	});
+
+	socket.on('new player', function (data) {
+		if(!$scope.gameinfo.currentplayer)
+		  	$scope.gameinfo.currentplayer = data;
+		$scope.gameinfo.players.push(data);
 	});
 
 	socket.on('card match', function(data) {
@@ -27,9 +39,25 @@ app.controller('GameCtrl', function($scope, socket, $timeout, $location, $modal,
 				$scope.gameinfo.board[index].removed = true;
 			});
 		}
+
+  		$scope.gameinfo.players[$scope.gameinfo.turn % $scope.gameinfo.players.length].score += 5;
+		++$scope.gameinfo.matchCount;
+
+		// Handle game over scenario
+		if($scope.gameinfo.board.length/2 == $scope.gameinfo.matchCount) {
+			$scope.gameended = true;
+			console.log('game over');
+			$modal.open({
+			  templateUrl: 'views/partials/playagain.html',
+			  scope: $scope
+			});
+		}
 	});
 
 	socket.on('card mismatch', function(data) {
+		// Failed, switch to next player
+  		while (!$scope.gameinfo.players[++$scope.gameinfo.turn % $scope.gameinfo.players.length].ready);
+
 		console.log('mismatch');
 		console.log(data.positions);
 		if(data.positions instanceof Array) {
@@ -41,10 +69,10 @@ app.controller('GameCtrl', function($scope, socket, $timeout, $location, $modal,
 		}
 	});
 
-	socket.on('end', function() {
-		console.log('Game over!');
-		$scope.gameended = true;
-	});
+	// socket.on('end', function() {
+	// 	console.log('Game over!');
+	// 	$scope.gameended = true;
+	// });
 
 	socket.on('next', function() {
 		console.log('Moving on to next game');
@@ -52,11 +80,19 @@ app.controller('GameCtrl', function($scope, socket, $timeout, $location, $modal,
 	});
 
 	$scope.revealCard = function(index) {
-		socket.emit('flip', index);
+		if(isPlayerTurn())
+			socket.emit('flip', index);
 	}
 
 	$scope.nextGame = function() {
 		socket.emit('next');
+	}
+
+	$scope.setReady = function() {
+		$scope.gameinfo.players.forEach(function(player) {
+			if(player.id === $scope.gameinfo.currentplayer.id)
+				player.ready = true;
+		});
 	}
 
 	function combineObjects(obj1, obj2) {
@@ -69,5 +105,11 @@ app.controller('GameCtrl', function($scope, socket, $timeout, $location, $modal,
 		while(arr.length > 0) {
 		    arr.pop();
 		}
+	}
+
+	function isPlayerTurn() {
+		console.log($scope.gameinfo.players[$scope.gameinfo.turn % $scope.gameinfo.players.length].id);
+		console.log($scope.gameinfo.currentplayer.id);
+		return $scope.gameinfo.players[$scope.gameinfo.turn % $scope.gameinfo.players.length].id === $scope.gameinfo.currentplayer.id;
 	}
 });

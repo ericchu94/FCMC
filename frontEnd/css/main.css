@@ -8,7 +8,7 @@
 	-webkit-perspective: 800;
 	height: 100px;
 	position: relative;
-	margin: 50px auto;
+	/*margin: 50px auto;*/
 }
 
 .flip .card.flipped {
@@ -63,6 +63,10 @@
 	border: none;
 }
 
+.col-md-3 {
+	width: 32%;
+}
+
 /* ==========================================================================
    Online users
    ========================================================================== */
@@ -100,4 +104,31 @@
 
 .minimize:hover {
 	background-color: #DDD;
+}
+
+.game-header {
+	margin-bottom: 50px;
+}
+
+.game-status .ready {
+	display: block;
+	width: 100%;
+	height: 100%;
+	font-size: 1.5em;
+	line-height: 1.5em;
+	text-align: center;
+	color: #000;
+	background-color: #00FFAA;
+	cursor: pointer;
+}
+
+.game-status .in-progress {
+	display: block;
+	width: 100%;
+	height: 100%;
+	font-size: 1.5em;
+	line-height: 1.5em;
+	text-align: center;
+	color: #000;
+	background-color: #00FFAA;
 }

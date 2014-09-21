@@ -1,12 +1,29 @@
-<div class="row users">
-	<h1>{{gameinfo.players.length}} players in this game</h1><span class="minimize" ng-click="minimize = !minimize" title="Minimize Window">_</span>
-	<div ng-repeat="player in gameinfo.players" class="user" ng-show="!minimize">Player</div>
+<div class="row game-header">
+	<div class="col-md-8">
+		<div ng-show="!gamestarted">The game hasn't started yet, press ready to proceed!</div>
+		<div ng-show="gamestarted" class="turn">
+			<span ng-show="gameinfo.currentplayer">It's currently <span ng-show="(gameinfo.turn % gameinfo.players.length) !== player.id">Player {{gameinfo.turn % gameinfo.players.length}}'s</span>
+			<span ng-show="(gameinfo.turn % gameinfo.players.length) === gameinfo.currentplayer.id">your</span> turn</span>
+		</div>
+	</div>
+	<div class="col-md-3 game-status">
+		<div class="ready" ng-click="setReady()" ng-show="!gameinfo.currentplayer.ready">Ready</div>
+		<div class="in-progress" ng-show="gameinfo.currentplayer.ready">In Progress</div>
+	</div>
 </div>
-<a ng-click="popUp();">Play again</a>
-<div class="row flip" ng-show="!gameended">
-	<div class="col-md-3 card" ng-repeat="card in gameinfo.board" ng-class="{'flipped': card.flipped}">
-		<div ng-click="card.flipped = !card.flipped; revealCard($index)" class="face front" ng-show="!card.removed">Card front</div>
-		<div ng-click="card.flipped = !card.flipped; revealCard($index)" class="face back" ng-show="!card.removed">{{card.text}}</div>
-		<div class="face back fadeout" ng-show="card.removed">{{card.text}}</div>
+<div class="row users">
+	<h1>{{gameinfo.players.length - 1}} other player(s) in this game</h1><span class="minimize" ng-click="minimize = !minimize" title="Minimize Window">_</span>
+	<div ng-repeat="player in gameinfo.players" class="user" ng-show="!minimize">
+		<span ng-show="player.id !== gameinfo.currentplayer.id">Player {{$index + 1}}</span>
+		<span ng-show="player.id === gameinfo.currentplayer.id">You</span><span ng-show="player.disconnected"> - Disconnected</span>
+	</div>
+</div>
+<div class="grid-container">
+	<div class="row flip" ng-show="!gameended">
+		<div class="col-md-3 card" ng-repeat="card in gameinfo.board" ng-class="{'flipped': card.flipped}">
+			<div ng-click="card.flipped = !card.flipped; revealCard($index)" class="face front" ng-show="!card.removed"></div>
+			<div ng-click="card.flipped = !card.flipped; revealCard($index)" class="face back" ng-show="!card.removed">{{card.text}}</div>
+			<div class="face back fadeout" ng-show="card.removed">{{card.text}}</div>
+		</div>
 	</div>
 </div>
