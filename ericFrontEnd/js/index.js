@@ -53,7 +53,7 @@ function updateCards() {
   $('.board').html('');
   var $row;
   for (var i = 0; i < room.board.length; ++i) {
-    if (i % 6 == 0) {
+    if (i % 4 == 0) {
       if ($row) {
         $('.board').append($row);
       }
@@ -188,6 +188,7 @@ socket.on('flip', function (position) {
 });
 socket.on('card mismatch', function (data) {
   while (!room.players[++room.turn % room.players.length].ready);
+  room.turn = room.turn % room.players.length;
 
   var $pair = $();
   for (var i = 0; i < data.positions.length; ++i) {
