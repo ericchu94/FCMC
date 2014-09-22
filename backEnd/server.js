@@ -133,6 +133,38 @@ function nextPlayer() {
   room.turn = room.turn % room.players.length;
 }
 
+function getState() {
+  return {
+    gameOn: room.gameOn,
+    players: room.players,
+    turn: room.turn,
+    board: getBoardState(),
+    matchCount: room.matchCount,
+  };
+}
+
+function nextGame() {
+  room.gameOn = false;
+  room.turn = -1;
+  room.matchCount = 0;
+
+  if (room.cards.length >= room.boardSize / 2) {
+    extractBoard();
+  } else {
+    setupCards();
+  }
+
+  for (var i = 0; i < room.players.length; ++i) {
+    var player = room.players[i];
+    if (player.disconnected) {
+        room.players.splice(i,1);
+        --i; // decrese, for increases, same index for next run
+    }
+    player.score = 0;
+    player.ready = false;
+  }
+}
+
 console.log('Server started');
 io.on('connection', function (socket) {
   // new connection
@@ -147,16 +179,8 @@ io.on('connection', function (socket) {
   };
 
   // send initial state
-  var state = {
-    gameOn: room.gameOn,
-    players: room.players,
-    turn: room.turn,
-    board: getBoardState(),
-    matchCount: room.matchCount,
-  };
-
-  socket.emit('room', state);
-  console.log('Emit: room');
+  socket.emit('new', getState());
+  console.log('Emit: new');
 
   room.players.push(player);
 
@@ -248,6 +272,7 @@ io.on('connection', function (socket) {
         player.score += 5;
 
         io.emit('card match', {
+          score: player.score,
           positions: [ position, room.workingCard ],
         });
         console.log('Emit: card match');
@@ -260,6 +285,7 @@ io.on('connection', function (socket) {
         nextPlayer();
 
         io.emit('card mismatch', {
+          turn: room.turn,
           positions: [ position, room.workingCard ],
         });
         console.log('Emit: card mismatch');
@@ -286,28 +312,10 @@ io.on('connection', function (socket) {
       return;
     }
 
-    room.gameOn = false;
-    room.turn = -1;
-    room.matchCount = 0;
+    nextGame();
 
-    if (room.cards.length >= room.boardSize / 2) {
-      extractBoard();
-    } else {
-      setupCards();
-    }
-
-    for (var i = 0; i < room.players.length; ++i) {
-      var player = room.players[i];
-      if (player.disconnected) {
-          room.players.splice(i,1);
-          --i; // decrese, for increases, same index for next run
-      }
-      player.score = 0;
-      player.ready = false;
-    }
-
-    io.emit('next', getBoardState());
-    console.log('Emit: next');
+    io.emit('room', getState());
+    console.log('Emit: room');
   });
 
   socket.on('ready', function () {
@@ -340,7 +348,7 @@ io.on('connection', function (socket) {
     var abandoned = true;
     for (var i = 0; i < room.players.length; ++i) {
       var p = room.players[i];
-      if (!p.disconnected) {
+      if (p.ready) {
         abandoned = false;
       }
       if (p == player) {
@@ -349,16 +357,26 @@ io.on('connection', function (socket) {
     }
     if (abandoned) {
       // TODO delete room
-      initializeRoom();
+      nextGame();
+      io.emit('room', getState());
+      console.log('Emit: room');
       return;
     }
 
     if (!room.gameOn) {
       // remove player from array
       room.players.splice(index, 1);
+    } else {
+      if (room.players[room.turn] == player) {
+        console.log('active player abandoned');
+        nextPlayer();
+      }
     }
 
-    io.emit('discon', player.id);
+    io.emit('discon', {
+      players: room.players,
+      turn: room.turn,
+    });
     console.log('Emit: discon');
   });
 });

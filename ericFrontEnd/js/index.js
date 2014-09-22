@@ -1,6 +1,7 @@
 var socket = io('http://localhost:8587');
-var room;
-var player;
+var room = null;
+var playerId = null;
+var initialised = false;
 
 $(function () {
   $(document).on('click', '.card-frame', function () {
@@ -26,7 +27,7 @@ function updatePlayers() {
   for (var i = 0; i < room.players.length; ++i) {
     var p = room.players[i];
     var $p = $($('#template-player').html());
-    if (player && p.id == player.id) {
+    if (p.id == playerId) {
       $p.addClass('player-me');
       $p.find('.player-name').text('Me');
 
@@ -44,7 +45,7 @@ function updatePlayers() {
     $p.data('id', p.id);
     $p.toggleClass('player-ready', p.ready);
     $p.toggleClass('player-disconnected', p.disconnected);
-    $p.toggleClass('player-active', room.turn % room.players.length == i);
+    $p.toggleClass('player-active', room.turn == i);
     $('.players').append($p);
   }  
 }
@@ -86,9 +87,9 @@ function updateWinner() {
   if (room.matchCount * 2 >= room.board.length) {
     // winner!!
     // show modal
-    var p = room.players[room.turn % room.players.length];
-    $('#winner-modal').toggleClass('defeat', !player || p.id != player.id);
-    $('#winner-modal').find('.winner-position').text(room.turn % room.players.length + 1);
+    var p = room.players[room.turn];
+    $('#winner-modal').toggleClass('defeat', p.id != playerId);
+    $('#winner-modal').find('.winner-position').text(room.turn + 1);
     $('#winner-modal').find('.winner-score').text(p.score);
     $('#winner-modal').modal();
   } else {
@@ -98,9 +99,17 @@ function updateWinner() {
 
 function updateControls() {
   if (room.gameOn) {
-    $('.controls').css('display', 'none');
+    if (initialised) {
+      $('.controls').slideUp();
+    } else {
+      $('.controls').css('display', 'none');
+    }
   } else {
-    $('.controls').css('display', '');
+    if (initialised) {
+      $('.controls').slideDown();
+    } else {
+      $('.controls').css('display', '');
+    }
   }
 }
 
@@ -109,12 +118,15 @@ function updateState() {
   updateBoard();
   updateWinner();
   updateControls();
+
+  initialised = true;
 }
 
-function outputShit() {
-  console.log(room);
-}
-
+socket.on('new', function (data) {
+  room = data;
+  playerId = null;
+  updateState();
+});
 socket.on('room', function (data) {
   room = data;
   updateState();
@@ -122,10 +134,10 @@ socket.on('room', function (data) {
 socket.on('new player', function (p) {
   room.players.push(p);
 
-  if (!player) {
-    player = p;
+  if (!playerId) {
+    playerId = p.id;
   }
-  outputShit();
+
   updatePlayers();
 });
 socket.on('start', function (data) {
@@ -133,22 +145,12 @@ socket.on('start', function (data) {
   room.turn = data.turn;
   room.gameOn = true;
 
-  for (var i = 0; i < room.players; ++i) {
-    var p = room.players[i];
-
-    if (p.id == player.id) {
-      player = p;
-      break;
-    }
-  }
-
   updatePlayers();
   updateBoard();
-
-  $('.controls').slideUp('slow');
+  updateControls();
 });
 socket.on('ready', function (id) {
-  if (id == player.id) {
+  if (id == playerId) {
     $('.ready').toggleClass('btn-default btn-success');
   }
 
@@ -164,7 +166,7 @@ socket.on('ready', function (id) {
   updatePlayers();
 });
 socket.on('unready', function (id) {
-  if (id == player.id) {
+  if (id == playerId) {
     $('.ready').toggleClass('btn-default btn-success');
   }
   for (var i = 0; i < room.players.length; ++i) {
@@ -187,8 +189,7 @@ socket.on('flip', function (position) {
   $(this).children().toggleClass('flipped');
 });
 socket.on('card mismatch', function (data) {
-  while (!room.players[++room.turn % room.players.length].ready);
-  room.turn = room.turn % room.players.length;
+  room.turn = data.turn;
 
   var $pair = $();
   for (var i = 0; i < data.positions.length; ++i) {
@@ -205,8 +206,8 @@ socket.on('card mismatch', function (data) {
   }, 1000);
 });
 socket.on('card match', function (data) {
-  var p = room.players[room.turn % room.players.length];
-  p.score += 5;
+  var p = room.players[room.turn];
+  p.score = data.score;
   ++room.matchCount;
 
   var $pair = $();
@@ -225,39 +226,14 @@ socket.on('card match', function (data) {
 
   }, 1000);
 });
-socket.on('next', function (board) {
-  room.gameOn = false;
-  room.turn = 0;
-  room.board = board;
-  room.matchCount = 0;
+socket.on('next', function (state) {
+  room = state;
 
-  for (var i = 0; i < room.players.length; ++i) {
-    var player = room.players[i];
-
-    if (player.disconnected) {
-      room.players.splice(i, 1);
-      --i;
-    }
-
-    player.score = 0;
-    player.ready = false;
-  }
   updateState();
-  $('.controls').slideDown('slow');
 });
-socket.on('discon', function (id) {
-  for (var i = 0; i < room.players.length; ++i) {
-    var player = room.players[i];
+socket.on('discon', function (data) {
+  room.players = data.players;
+  room.turn = data.turn;
 
-    if (player.id == id) {
-      if (!room.gameOn) {
-        room.players.splice(i, 1);
-      } else {
-        player.disconnected = true;
-        player.ready = false;
-      }
-      break;
-    }
-  }
   updatePlayers();
 });
