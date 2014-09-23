@@ -4,9 +4,7 @@ var async = require('async');
 
 var sets = {};
 
-var s = '';
-
-var publics = [ 1661835 ];
+var publics = [ 1661835, 701816 ];
 
 var gets = [];
 
@@ -14,6 +12,7 @@ for (var i = 0; i < publics.length; ++i) {
   var setId = publics[i];
   gets.push(function (id) {
     return function (callback) {
+      var s = '';
       https.get({
         host: 'api.Cram.com',
         path: '/v2/sets/' + id + '?client_id=2b8b14b461a5cbf2aa508639abe8b115',
@@ -36,7 +35,6 @@ for (var i = 0; i < publics.length; ++i) {
   } (setId));
 }
 
-console.log(gets);
 async.parallel(gets, function () {
   initializeRoom();
 });
@@ -75,20 +73,33 @@ function initializeRoom() {
     turn: -1, // represents which index of player is to perform the next action
     workingCard: null, // represents the position of card that is flipped
     matchCount: 0,
+    sets: getSetsState(),
   };
+}
 
-  setupCards();
+function getSetsState() {
+  var s = [];
+  for (var id in sets) {
+    var set = sets[id];
+    s.push({
+      id: id,
+      name: set.title,
+    });
+  }
+  return s;
 }
 
 function setupCards() {
   var set = sets[room.setId];
 
   room.cards = shuffle(set.cards.slice(0));
-
-  extractBoard();
 }
 
 function extractBoard() {
+  if (!room.cards || room.cards.length < room.boardSize / 2) {
+    setupCards();
+  }
+
   room.board = [];
   var cards = room.cards.splice(room.cards.length - room.boardSize / 2);
   for (var i = 0; i < cards.length; ++i) {
@@ -140,6 +151,8 @@ function getState() {
     turn: room.turn,
     board: getBoardState(),
     matchCount: room.matchCount,
+    sets: getSetsState(),
+    setId: room.setId,
   };
 }
 
@@ -147,12 +160,6 @@ function nextGame() {
   room.gameOn = false;
   room.turn = -1;
   room.matchCount = 0;
-
-  if (room.cards.length >= room.boardSize / 2) {
-    extractBoard();
-  } else {
-    setupCards();
-  }
 
   for (var i = 0; i < room.players.length; ++i) {
     var player = room.players[i];
@@ -196,7 +203,15 @@ io.on('connection', function (socket) {
       return;
     }
 
+    if (id == room.setId) {
+      return;
+    }
+
     room.setId = id;
+    setupCards();
+
+    io.emit('set', id);
+    console.log('Emit: set');
   });
 
   socket.on('start', function () {
@@ -225,10 +240,13 @@ io.on('connection', function (socket) {
     shuffle(room.players);
     nextPlayer();
 
+    extractBoard();
+
     room.gameOn = true;
     io.emit('start', {
       players: room.players,
       turn: room.turn,
+      board: getBoardState(),
     });
     console.log('Emit: start');
   });

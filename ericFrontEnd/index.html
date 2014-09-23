@@ -23,8 +23,12 @@
       </div>
       <div class="row controls">
         <div class="col-xs-12">
-          <button class="btn btn-default btn-lg ready">Ready</button>
-          <button class="btn btn-primary btn-lg start">Start</button>
+          <form class="form-inline" role="form">
+            <select class="form-control sets">
+            </select>
+            <button type="button" class="btn btn-default btn-lg ready">Ready</button>
+            <button type="button" class="btn btn-primary btn-lg start">Start</button>
+          </form>
         </div>
       </div>
       <div class="row">
@@ -54,6 +58,9 @@
     </div>
 
     <div class="templates">
+      <div id="template-set">
+        <option></option>
+      </div>
       <div id="template-player">
         <div class="col-sm-2">
           <div class="row player-top">

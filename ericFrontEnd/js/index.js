@@ -20,6 +20,9 @@ $(function () {
   $('.next').on('click', function () {
     socket.emit('next');
   });
+  $('.sets').on('change', function () {
+    socket.emit('set', $(this).val());
+  });
 });
 
 function updatePlayers() {
@@ -84,7 +87,7 @@ function updateBoard() {
 }
 
 function updateWinner() {
-  if (room.matchCount * 2 >= room.board.length) {
+  if (room.gameOn && room.matchCount * 2 >= room.board.length) {
     // winner!!
     // show modal
     var p = room.players[room.turn];
@@ -98,6 +101,18 @@ function updateWinner() {
 }
 
 function updateControls() {
+  $('.sets').html('');
+  for (var i = 0; i < room.sets.length; ++i) {
+    var set = room.sets[i];
+    var $set = $($('#template-set').html());
+    $set.val(set.id);
+    $set.text(set.name);
+    if (set.id == room.setId) {
+      $set.attr('selected', 'selected');
+    }
+    $('.sets').append($set);
+  }
+
   if (room.gameOn) {
     if (initialised) {
       $('.controls').slideUp();
@@ -143,6 +158,7 @@ socket.on('new player', function (p) {
 socket.on('start', function (data) {
   room.players = data.players;
   room.turn = data.turn;
+  room.board = data.board;
   room.gameOn = true;
 
   updatePlayers();
@@ -236,4 +252,9 @@ socket.on('discon', function (data) {
   room.turn = data.turn;
 
   updatePlayers();
+});
+socket.on('set', function (id) {
+  room.setId = id;
+
+  updateControls();
 });
