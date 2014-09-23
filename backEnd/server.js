@@ -160,6 +160,7 @@ function nextGame() {
   room.gameOn = false;
   room.turn = -1;
   room.matchCount = 0;
+  room.board = [];
 
   for (var i = 0; i < room.players.length; ++i) {
     var player = room.players[i];
